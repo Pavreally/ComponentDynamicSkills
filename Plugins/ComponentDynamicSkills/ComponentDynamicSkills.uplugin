@@ -1,0 +1,28 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "Component Dynamic Skills",
+	"Description": "Actor Component for managing dynamic abilities in single-player games.",
+	"Category": "Experimental",
+	"CreatedBy": "Pavel Gornostaev",
+	"CreatedByURL": "https://github.com/Pavreally",
+	"DocsURL": "https://github.com/Pavreally/ComponentDynamicSkills",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"IsExperimentalVersion": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "ComponentDynamicSkills",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Android"
+			]
+		}
+	]
+}
