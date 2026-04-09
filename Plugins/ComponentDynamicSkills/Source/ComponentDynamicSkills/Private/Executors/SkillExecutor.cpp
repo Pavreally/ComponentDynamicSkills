@@ -10,11 +10,11 @@ void USkillExecutor::Execute(const FSkillExecutionContext& Context)
 		return;
 	}
 
-	if (Context.Data->Effect)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Skill [%s] executed with effect: %s"), 
-			*Context.Data->SkillTag.ToString(), *Context.Data->Effect->EffectTag.ToString());
-	}
+	// if (Context.Data->Effect)
+	// {
+	// 	UE_LOG(LogTemp, Log, TEXT("Skill [%s] executed with effect: %s"), 
+	// 		*Context.Data->SkillTag.ToString(), *Context.Data->Effect->EffectTag.ToString());
+	// }
 }
 
 void UMeleeSkillExecutor::Execute(const FSkillExecutionContext& Context)
@@ -28,12 +28,12 @@ void UMeleeSkillExecutor::Execute(const FSkillExecutionContext& Context)
 	Super::Execute(Context);
 
 	// Melee-specific logic
-	if (Context.Data->Effect)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Melee Skill [%s] applied to target: %s"), 
-			*Context.Data->SkillTag.ToString(), 
-			*GetNameSafe(Context.Target));
-	}
+	// if (Context.Data->Effect)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("Melee Skill [%s] applied to target: %s"), 
+	// 		*Context.Data->SkillTag.ToString(), 
+	// 		*GetNameSafe(Context.Target));
+	// }
 }
 
 void UProjectileSkillExecutor::Execute(const FSkillExecutionContext& Context)
@@ -47,12 +47,12 @@ void UProjectileSkillExecutor::Execute(const FSkillExecutionContext& Context)
 	Super::Execute(Context);
 
 	// Projectile-specific logic
-	if (Context.Data->ProjectileClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Projectile Skill [%s] spawned: %s"), 
-			*Context.Data->SkillTag.ToString(), 
-			*Context.Data->ProjectileClass->GetName());
-	}
+	// if (Context.Data->ProjectileClass)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("Projectile Skill [%s] spawned: %s"), 
+	// 		*Context.Data->SkillTag.ToString(), 
+	// 		*Context.Data->ProjectileClass->GetName());
+	// }
 }
 
 void UAOESkillExecutor::Execute(const FSkillExecutionContext& Context)

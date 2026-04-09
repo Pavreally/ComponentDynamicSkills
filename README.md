@@ -11,8 +11,9 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 ## Latest Updates
 `Experimental`
 
-`Version 1.0.0`
+`Version 1.0.1`
 - Built for Unreal Engine 5.7.4.
+- Commented out unnecessary logs in "SkillExecutor.cpp".
 
 ## What it's for
 - Dynamic management of abilities.
