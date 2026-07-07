@@ -11,15 +11,22 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 ## Latest Updates
 `Experimental`
 
-`Version 1.0.1`
+`Version 1.1.0`
 - Built for Unreal Engine 5.7.4.
-- Commented out unnecessary logs in "SkillExecutor.cpp".
+- Refactored the code.
+- Improved the UX for configuring ability data.
+- Added ability collection registration.
+- Numeric ability parameters are now linked to `GameplayTags`, allowing you to create any number of custom parameters individually for each ability.
+- Added a way to integrate abilities into the State Tree via the new `STTask_ExecuteSkillCDS` class. In the `SkillsDataAssetCDS` asset, you can now add `SkillContextDataAssetCDS` settings to the `ContextBindings` field to specify any number of AI settings, which are conveniently organized by section. These settings can include parameters such as the NPC HP threshold for retreating, checking whether the NPC should stop before using a skill, etc. This means you can configure the skill processing system for multiple NPC classes and adjust the balance all from one place.
+- Expanded references for animations, effects, and projectiles.
+- Added fields for sounds and decals.
 
 ## What it's for
-- Dynamic management of abilities.
+- Management and configuration of player character abilities, featuring the ability to pass data into the State Tree.
 
 ## Features
 - Support for dynamic creation of abilities.
+- Create, group, and blend ability setting contexts with subsequent integration into the State Tree.
 - Encapsulated logic with rich context data.
 - Quick search by typing "CDS" — easily find all related classes and functions. No need to remember long function names — simply type “CDS” in the search box and start creating!
 - Automatic detection of the character’s Skeletal Mesh for the encapsulated ability logic context.

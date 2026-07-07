@@ -5,17 +5,21 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "GameplayTagContainer.h"
+#include "NiagaraSystem.h"
 #include "SkillEnumsCDS.h"
 #include "SkillExecutionContextCDS.h"
 #include "DataAsset/EffectDataCDS.h"
-
-class USkillLogicBaseCDS;
+#include "DataAsset/SkillContextDataAssetCDS.h"
 #include "Modifiers/SkillModifierBase.h"
 #include "SkillsDataAssetCDS.generated.h"
 
+class USkillLogicBaseCDS;
 class AActor;
 class UAnimMontage;
 class UCurveFloat;
+class UMaterialInterface;
+class UNiagaraSystem;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class COMPONENTDYNAMICSKILLS_API USkillsDataAssetCDS : public UPrimaryDataAsset
@@ -23,6 +27,10 @@ class COMPONENTDYNAMICSKILLS_API USkillsDataAssetCDS : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	USkillsDataAssetCDS();
+
+	virtual void PostInitProperties() override;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Core", meta = (ToolTip = "Gameplay tag that uniquely identifies this skill"))
 	FGameplayTag SkillTag;
 
@@ -60,28 +68,31 @@ public:
 	ESkillInterruptPolicy InterruptPolicy = ESkillInterruptPolicy::None;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Behavior", meta = (ToolTip = "Additional gameplay tags associated with this skill (for filtering/queries)"))
-	FGameplayTagContainer SkillTags;
+	FGameplayTagContainer BehaviorTags;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References", meta = (ToolTip = "Optional effect data applied when the skill executes"))
-	TObjectPtr<UEffectDataCDS> Effect = nullptr;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|Projectiles", meta = (ToolTip = "Optional mapping of projectile actor classes keyed by tags"))
+	TMap<FGameplayTag, TSubclassOf<AActor>> Projectiles;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References", meta = (ToolTip = "Projectile actor class used by projectile-type skills"))
-	TSubclassOf<AActor> ProjectileClass;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|StatusEffects", meta = (ToolTip = "Optional mapping of status effect assets keyed by tags"))
+	TMap<FGameplayTag, TObjectPtr<UEffectDataCDS>> StatusEffects;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Animation", meta = (ToolTip = "Optional mapping of animation montages keyed by tags"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|Animations", meta = (ToolTip = "Optional mapping of animation montages keyed by tags"))
 	TMap<FGameplayTag, TObjectPtr<UAnimMontage>> Animations;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Parameters", meta = (ToolTip = "Minimum damage applied by the skill"))
-	float MinDamage = 0.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|Niagara", meta = (ToolTip = "Optional mapping of Niagara systems keyed by tags"))
+	TMap<FGameplayTag, TObjectPtr<UNiagaraSystem>> Niagara;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Parameters", meta = (ToolTip = "Maximum damage applied by the skill"))
-	float MaxDamage = 0.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|Sounds", meta = (ToolTip = "Optional mapping of sounds keyed by tags"))
+	TMap<FGameplayTag, TObjectPtr<USoundBase>> Sounds;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Parameters", meta = (ToolTip = "Minimum radius for AOE effects"))
-	float MinRadius = 0.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|References|Decals", meta = (ToolTip = "Optional mapping of decal materials keyed by tags"))
+	TMap<FGameplayTag, TObjectPtr<UMaterialInterface>> Decals;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Parameters", meta = (ToolTip = "Maximum radius for AOE effects"))
-	float MaxRadius = 0.0f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Context Bindings", meta = (ToolTip = "Context data assets keyed by gameplay tags for runtime selection"))
+	TMap<FGameplayTag, TObjectPtr<USkillContextDataAssetCDS>> ContextBindings;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Parameters", meta = (ToolTip = "Flexible numeric parameters keyed by gameplay tags for runtime systems"))
+	TMap<FGameplayTag, float> Parameters;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Modifier", meta = (ToolTip = "Optional modifier object applied to this skill's calculations"))
 	TObjectPtr<USkillModifierBase> Modifier = nullptr;

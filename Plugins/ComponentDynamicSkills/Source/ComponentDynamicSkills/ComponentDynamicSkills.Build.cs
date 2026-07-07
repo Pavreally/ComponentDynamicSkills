@@ -29,6 +29,8 @@ public class ComponentDynamicSkills : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"GameplayTags",
+				"Niagara",
+				"StateTreeModule",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

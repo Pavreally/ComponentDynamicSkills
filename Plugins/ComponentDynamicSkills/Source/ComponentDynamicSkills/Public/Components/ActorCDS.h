@@ -8,6 +8,7 @@
 #include "SkillExecutionContextCDS.h"
 #include "SkillRuntimeData.h"
 #include "Executors/SkillExecutor.h"
+#include "DataAsset/SkillsDataCollectionAssetCDS.h"
 #include "ActorCDS.generated.h"
 
 class USkillsDataAssetCDS;
@@ -29,17 +30,28 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillTickCDS, FGameplayTag, Skill
 /**
  * Core component for managing skill execution in CDS (Component Dynamic Skills).
  * 
- * Responsibilities:
- * - Register and manage skill assets
- * - Handle skill lifecycle (activation, commitment, execution, finishing)
- * - Manage timers for charges, cooldowns, and active durations
- * - Dispatch events for external systems
+ * ## Responsibilities:
+ * - Register and manage skill assets.
+ * - Handle skill lifecycle (activation, commitment, execution, finishing).
+ * - Skills are authored as data assets and may be grouped into collections.
+ * - Manage timers for charges, cooldowns, and active durations.
+ * - Dispatch events for external systems.
+ * - Context bindings resolve usage contexts by gameplay tags and priority.
  * 
- * Skill execution flow:
- * 1. TryActivateSkill() - Check if skill can be activated
- * 2. CommitSkill() - Charge validation and confirmation
- * 3. ExecuteSkill() - Modifier + Logic + Executor + Effect
- * 4. FinishSkill() - Cooldown/recharge and state reset
+ * ## Skill execution flow:
+ * 1. TryActivateSkill() - Check if skill can be activated.
+ * 2. CommitSkill() - Charge validation and confirmation.
+ * 3. ExecuteSkill() - Modifier + Logic + Executor + Effect.
+ * 4. FinishSkill() - Cooldown/recharge and state reset.
+ * 
+ * ## Recommended Naming Conventions:
+ * - `Anim.*` — animation references such as `Anim.Cast`, `Anim.PreCast`, `Anim.Heavy`.
+ * - `Effect.*` — effect references such as `Effect.Primary`, `Effect.Explosion`.
+ * - `Sound.*` — sound references such as `Sound.Cast`, `Sound.Impact`.
+ * - `Projectile.*` — projectile class references.
+ * - `AI.*` — AI behavior parameters such as `AI.StopMovement`, `AI.RequiredDistance`.
+ * - `Player.*` — player behavior parameters.
+ * - `Network.*`, `Debug.*` and similar prefixes — subsystem-specific parameters.
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class COMPONENTDYNAMICSKILLS_API UActorCDS : public UActorComponent
@@ -53,6 +65,9 @@ public:
 	 * Array of skill assets to register on BeginPlay.
 	 * Skills are initialized automatically when the component is attached to an actor.
 	 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic Skills CDS|Registration")
+	TArray<TObjectPtr<USkillsDataCollectionAssetCDS>> RegisteredSkillCollections;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic Skills CDS|Registration")
 	TArray<TObjectPtr<USkillsDataAssetCDS>> RegisteredSkillAssets;
 
@@ -218,6 +233,11 @@ private:
 	 * Initialize component lifecycle hooks.
 	 */
 	virtual void BeginPlay() override;
+
+	/**
+	 * Register skills from configured collections and direct assets.
+	 */
+	void RegisterSkillsFromCollections();
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	/**
@@ -289,6 +309,11 @@ private:
 	 * Prefers ISkillContextProviderCDS when implemented by the owner actor.
 	 */
 	USkeletalMeshComponent *ResolveSourceSkeletalMesh();
+
+	/**
+	 * Resolve the best context asset for a skill by gameplay-tag lookup.
+	 */
+	const USkillContextDataAssetCDS *ResolveSkillContext(const USkillsDataAssetCDS *Asset, const FGameplayTagContainer &CandidateTags) const;
 
 	// Timer callbacks
 	UFUNCTION()

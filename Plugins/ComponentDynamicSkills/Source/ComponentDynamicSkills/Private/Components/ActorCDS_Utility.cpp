@@ -154,6 +154,34 @@ USkeletalMeshComponent *UActorCDS::ResolveSourceSkeletalMesh()
 	return CachedSourceSkeletalMesh;
 }
 
+const USkillContextDataAssetCDS *UActorCDS::ResolveSkillContext(const USkillsDataAssetCDS *Asset, const FGameplayTagContainer &CandidateTags) const
+{
+	if (Asset == nullptr)
+	{
+		return nullptr;
+	}
+
+	// Find the best matching context by tag lookup
+	for (const FGameplayTag &Tag : CandidateTags)
+	{
+		if (const TObjectPtr<USkillContextDataAssetCDS> *ContextPtr = Asset->ContextBindings.Find(Tag))
+		{
+			if (ContextPtr != nullptr && *ContextPtr != nullptr)
+			{
+				return ContextPtr->Get();
+			}
+		}
+	}
+
+	// Return default context if no specific match found
+	if (!Asset->ContextBindings.IsEmpty())
+	{
+		return Asset->ContextBindings.begin()->Value;
+	}
+
+	return nullptr;
+}
+
 FSkillExecutionContext UActorCDS::BuildContext(FSkillRuntimeData &Skill)
 {
 	// Populate execution context with all relevant data
@@ -163,21 +191,29 @@ FSkillExecutionContext UActorCDS::BuildContext(FSkillRuntimeData &Skill)
 	Context.Target = Skill.TargetActor;
 	Context.SourceSkeletalMesh = ResolveSourceSkeletalMesh();
 	Context.Data = Skill.Asset;
+	Context.ContextData = ResolveSkillContext(Skill.Asset, FGameplayTagContainer{});
 	Context.ChargeAlpha = CalculateChargeAlpha(Skill);
 	return Context;
 }
 
 void UActorCDS::ApplyEffectInternal(const FSkillExecutionContext &Context)
 {
-	// Validate context and effect  
-	if (!Context.Data || !Context.Data->Effect)
+	// Validate context and skill data
+	if (!Context.Data)
 		return;
 
-	// Log effect application for debugging and external system notification
-	UE_LOG(LogTemp, Log, TEXT("CDS → CDE: Apply EffectTag [%s] | Skill [%s] | Charge %.2f"),
-			*Context.Data->Effect->EffectTag.ToString(),
-			*Context.Data->SkillTag.ToString(),
-			Context.ChargeAlpha);
+	for (const TPair<FGameplayTag, TObjectPtr<UEffectDataCDS>> &EffectEntry : Context.Data->StatusEffects)
+	{
+		if (!EffectEntry.Value)
+		{
+			continue;
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("CDS → CDE: Apply EffectTag [%s] | Skill [%s] | Charge %.2f"),
+				*EffectEntry.Value->EffectTag.ToString(),
+				*Context.Data->SkillTag.ToString(),
+				Context.ChargeAlpha);
+	}
 	
 	// TODO: Pass effect tag and context to Component Dynamic Effects (CDE)
 }

@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.0.1",
+	"VersionName": "1.1.0",
 	"FriendlyName": "Component Dynamic Skills",
 	"Description": "Actor Component for managing dynamic abilities in single-player games.",
 	"Category": "Experimental",
@@ -23,6 +23,18 @@
 				"Win64",
 				"Android"
 			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Niagara",
+			"Enabled": true,
+			"Activate": true
+		},
+		{
+			"Name": "StateTree",
+			"Enabled": true,
+			"Activate": true
 		}
 	]
 }

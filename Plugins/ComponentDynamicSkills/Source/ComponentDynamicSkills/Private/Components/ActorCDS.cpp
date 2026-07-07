@@ -15,12 +15,7 @@ UActorCDS::UActorCDS()
 void UActorCDS::BeginPlay()
 {
 	Super::BeginPlay();
-
-	// Register all configured skills at runtime
-	for (USkillsDataAssetCDS *SkillAsset : RegisteredSkillAssets)
-	{
-		RegisterSkill(SkillAsset);
-	}
+	RegisterSkillsFromCollections();
 }
 
 void UActorCDS::EndPlay(const EEndPlayReason::Type EndPlayReason)

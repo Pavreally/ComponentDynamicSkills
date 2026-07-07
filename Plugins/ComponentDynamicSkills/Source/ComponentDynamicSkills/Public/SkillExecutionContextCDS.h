@@ -10,6 +10,7 @@
 class AActor;
 class USkillsDataAssetCDS;
 class UActorCDS;
+class USkillContextDataAssetCDS;
 
 /**
  * Execution context passed through the entire skill pipeline.
@@ -71,4 +72,10 @@ public:
 	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Skill Context")
 	TObjectPtr<UActorCDS> SourceComponent = nullptr;
+
+	/**
+	 * Selected skill context asset, resolved from ContextBindings by gameplay-tag matching and priority.
+	 */
+	UPROPERTY(BlueprintReadWrite, Category = "Skill Context")
+	TObjectPtr<const USkillContextDataAssetCDS> ContextData = nullptr;
 };

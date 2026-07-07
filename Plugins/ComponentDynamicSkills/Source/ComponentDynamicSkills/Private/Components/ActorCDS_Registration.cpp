@@ -43,7 +43,7 @@ void UActorCDS::RegisterSkill(USkillsDataAssetCDS *Asset)
 
 	// Auto-activate passive skills on registration
 	FGameplayTag PassiveTag = FGameplayTag::RequestGameplayTag(TEXT("Skill.Passive"), false);
-	if (PassiveTag.IsValid() && Asset->SkillTags.HasTag(PassiveTag))
+	if (PassiveTag.IsValid() && Asset->BehaviorTags.HasTag(PassiveTag))
 	{
 		TryActivateSkill(Asset->SkillTag);
 	}
@@ -97,6 +97,33 @@ bool UActorCDS::FindSkillData(FGameplayTag Tag, FSkillRuntimeData &OutSkill) con
 	// Return empty struct on failure
 	OutSkill = FSkillRuntimeData{};
 	return false;
+}
+
+void UActorCDS::RegisterSkillsFromCollections()
+{
+	for (USkillsDataCollectionAssetCDS *Collection : RegisteredSkillCollections)
+	{
+		if (Collection == nullptr)
+		{
+			continue;
+		}
+
+		for (USkillsDataAssetCDS *SkillAsset : Collection->Skills)
+		{
+			if (SkillAsset != nullptr)
+			{
+				RegisterSkill(SkillAsset);
+			}
+		}
+	}
+
+	for (USkillsDataAssetCDS *SkillAsset : RegisteredSkillAssets)
+	{
+		if (SkillAsset != nullptr)
+		{
+			RegisterSkill(SkillAsset);
+		}
+	}
 }
 
 void USkillLogicBaseCDS::Initialize(UActorCDS *InOwner)

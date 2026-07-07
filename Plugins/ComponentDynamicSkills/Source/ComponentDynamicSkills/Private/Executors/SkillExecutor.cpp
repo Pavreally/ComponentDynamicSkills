@@ -66,11 +66,13 @@ void UAOESkillExecutor::Execute(const FSkillExecutionContext& Context)
 	Super::Execute(Context);
 
 	// AOE-specific logic
-	if (Context.Data->Effect)
+	if (Context.Data->StatusEffects.Num() > 0)
 	{
+		const float MinRadius = Context.Data->Parameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("Parameter.MinRadius"), false));
+		const float MaxRadius = Context.Data->Parameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("Parameter.MaxRadius"), false));
 		UE_LOG(LogTemp, Warning, TEXT("AOE Skill [%s] radius: min=%.2f max=%.2f"), 
 			*Context.Data->SkillTag.ToString(),
-			Context.Data->MinRadius,
-			Context.Data->MaxRadius);
+			MinRadius,
+			MaxRadius);
 	}
 }
