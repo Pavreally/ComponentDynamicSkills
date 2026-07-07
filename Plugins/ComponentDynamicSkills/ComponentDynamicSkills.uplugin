@@ -1,7 +1,7 @@
 {
 	"FileVersion": 3,
 	"Version": 1,
-	"VersionName": "1.1.0",
+	"VersionName": "1.1.1",
 	"FriendlyName": "Component Dynamic Skills",
 	"Description": "Actor Component for managing dynamic abilities in single-player games.",
 	"Category": "Experimental",

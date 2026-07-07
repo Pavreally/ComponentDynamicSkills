@@ -11,7 +11,7 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 ## Latest Updates
 `Experimental`
 
-`Version 1.1.0`
+`Version 1.1.1`
 - Built for Unreal Engine 5.7.4.
 - Refactored the code.
 - Improved the UX for configuring ability data.
@@ -20,6 +20,12 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 - Added a way to integrate abilities into the State Tree via the new `STTask_ExecuteSkillCDS` class. In the `SkillsDataAssetCDS` asset, you can now add `SkillContextDataAssetCDS` settings to the `ContextBindings` field to specify any number of AI settings, which are conveniently organized by section. These settings can include parameters such as the NPC HP threshold for retreating, checking whether the NPC should stop before using a skill, etc. This means you can configure the skill processing system for multiple NPC classes and adjust the balance all from one place.
 - Expanded references for animations, effects, and projectiles.
 - Added fields for sounds and decals.
+
+`Minor`
+
+- Added new contextual data types: Vector, Other Assets.
+- Added a new `GetContextData` function to retrieve contextual data by tag.
+- Fixed bugs in the State Tree Task CDS class. Added debug messages.
 
 ## What it's for
 - Management and configuration of player character abilities, featuring the ability to pass data into the State Tree.

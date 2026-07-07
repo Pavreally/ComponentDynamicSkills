@@ -9,6 +9,7 @@
 #include "SkillRuntimeData.h"
 #include "Executors/SkillExecutor.h"
 #include "DataAsset/SkillsDataCollectionAssetCDS.h"
+#include "DataAsset/SkillContextDataAssetCDS.h"
 #include "ActorCDS.generated.h"
 
 class USkillsDataAssetCDS;
@@ -29,7 +30,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillTickCDS, FGameplayTag, Skill
 
 /**
  * Core component for managing skill execution in CDS (Component Dynamic Skills).
- * 
+ *
  * ## Responsibilities:
  * - Register and manage skill assets.
  * - Handle skill lifecycle (activation, commitment, execution, finishing).
@@ -37,13 +38,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillTickCDS, FGameplayTag, Skill
  * - Manage timers for charges, cooldowns, and active durations.
  * - Dispatch events for external systems.
  * - Context bindings resolve usage contexts by gameplay tags and priority.
- * 
+ *
  * ## Skill execution flow:
  * 1. TryActivateSkill() - Check if skill can be activated.
  * 2. CommitSkill() - Charge validation and confirmation.
  * 3. ExecuteSkill() - Modifier + Logic + Executor + Effect.
  * 4. FinishSkill() - Cooldown/recharge and state reset.
- * 
+ *
  * ## Recommended Naming Conventions:
  * - `Anim.*` — animation references such as `Anim.Cast`, `Anim.PreCast`, `Anim.Heavy`.
  * - `Effect.*` — effect references such as `Effect.Primary`, `Effect.Explosion`.
@@ -105,6 +106,16 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "Dynamic Skills CDS|Skills")
 	bool FindSkillData(FGameplayTag Tag, FSkillRuntimeData &OutSkill) const;
+
+	/**
+	 * Returns context data associated with the specified skill and context tag.
+	 *
+	 * @param SkillTag Skill gameplay tag.
+	 * @param ContextTag Context gameplay tag.
+	 * @return Context Data Asset or nullptr if not found.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Dynamic Skills CDS|Skills")
+	USkillContextDataAssetCDS *GetContextData(FGameplayTag SkillTag, FGameplayTag ContextTag) const;
 
 	/**
 	 * Attempt to activate a skill.

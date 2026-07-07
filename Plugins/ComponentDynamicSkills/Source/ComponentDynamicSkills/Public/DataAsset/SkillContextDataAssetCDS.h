@@ -32,6 +32,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Context|Parameters|Int")
 	TMap<FGameplayTag, int32> IntParameters;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Context|Parameters|Vector")
+	TMap<FGameplayTag, FVector> VectorParameters;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Context|Parameters|Name")
 	TMap<FGameplayTag, FName> NameParameters;
 
@@ -70,4 +73,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Context|Parameters|Table")
 	TMap<FGameplayTag, FDataTableRowHandle> TableParameters;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Context|Parameters|OtherAssets")
+	TMap<FGameplayTag, TObjectPtr<UObject>> AssetParameters;
 };

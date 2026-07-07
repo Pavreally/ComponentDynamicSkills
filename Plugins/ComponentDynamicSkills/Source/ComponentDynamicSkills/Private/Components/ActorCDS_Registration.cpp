@@ -99,6 +99,25 @@ bool UActorCDS::FindSkillData(FGameplayTag Tag, FSkillRuntimeData &OutSkill) con
 	return false;
 }
 
+USkillContextDataAssetCDS *UActorCDS::GetContextData(
+		FGameplayTag SkillTag,
+		FGameplayTag ContextTag) const
+{
+	const FSkillRuntimeData *SkillData = FindSkill(SkillTag);
+	if (!SkillData || !SkillData->Asset)
+	{
+		return nullptr;
+	}
+
+	if (const TObjectPtr<USkillContextDataAssetCDS> *Context =
+					SkillData->Asset->ContextBindings.Find(ContextTag))
+	{
+		return Context->Get();
+	}
+
+	return nullptr;
+}
+
 void UActorCDS::RegisterSkillsFromCollections()
 {
 	for (USkillsDataCollectionAssetCDS *Collection : RegisteredSkillCollections)
