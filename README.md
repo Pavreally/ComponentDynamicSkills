@@ -17,7 +17,7 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 - Improved the UX for configuring ability data.
 - Added ability collection registration.
 - Numeric ability parameters are now linked to `GameplayTags`, allowing you to create any number of custom parameters individually for each ability.
-- Added a way to integrate abilities into the State Tree via the new `STTask_ExecuteSkillCDS` class. In the `SkillsDataAssetCDS` asset, you can now add `SkillContextDataAssetCDS` settings to the `ContextBindings` field to specify any number of AI settings, which are conveniently organized by section. These settings can include parameters such as the NPC HP threshold for retreating, checking whether the NPC should stop before using a skill, etc. This means you can configure the skill processing system for multiple NPC classes and adjust the balance all from one place.
+- Added a way to integrate abilities into the State Tree via the new `StateTreeTaskExecuteSkillCDS` class. In the `SkillsDataAssetCDS` asset, you can now add `SkillContextDataAssetCDS` settings to the `ContextBindings` field to specify any number of AI settings, which are conveniently organized by section. These settings can include parameters such as the NPC HP threshold for retreating, checking whether the NPC should stop before using a skill, etc. This means you can configure the skill processing system for multiple NPC classes and adjust the balance all from one place.
 - Expanded references for animations, effects, and projectiles.
 - Added fields for sounds and decals.
 
