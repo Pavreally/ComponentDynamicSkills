@@ -34,8 +34,8 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Core", meta = (ToolTip = "Gameplay tag that uniquely identifies this skill"))
 	FGameplayTag SkillTag;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Core", meta = (ToolTip = "Execution classification used to resolve executors (Melee/Projectile/AOE)"))
-	ESkillExecutionType ExecutionType = ESkillExecutionType::Melee;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Core", meta = (ToolTip = "Execution path used to resolve an executor (Instant/Projectile/AOE)"))
+	ESkillExecutionType ExecutionType = ESkillExecutionType::Instant;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skill|Core", meta = (ClampMin = "0.0", ToolTip = "Resource cost to use the skill (game-specific semantics)"))
 	float Cost = 0.0f;

@@ -15,6 +15,8 @@
 class USkillsDataAssetCDS;
 class USkillLogicBaseCDS;
 class USkillModifierBase;
+class USkillParameterModifierDataAssetCDS;
+class USkillParameterModifierCollectionAssetCDS;
 class USkeletalMeshComponent;
 
 // Event delegates
@@ -35,7 +37,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillTickCDS, FGameplayTag, Skill
  * - Register and manage skill assets.
  * - Handle skill lifecycle (activation, commitment, execution, finishing).
  * - Skills are authored as data assets and may be grouped into collections.
- * - Manage timers for charges, cooldowns, and active durations.
+ * - Manage timers for charges, cooldowns, active durations, and parameter modifiers.
  * - Dispatch events for external systems.
  * - Context bindings resolve usage contexts by gameplay tags and priority.
  *
@@ -52,7 +54,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSkillTickCDS, FGameplayTag, Skill
  * - `Projectile.*` — projectile class references.
  * - `AI.*` — AI behavior parameters such as `AI.StopMovement`, `AI.RequiredDistance`.
  * - `Player.*` — player behavior parameters.
- * - `Network.*`, `Debug.*` and similar prefixes — subsystem-specific parameters.
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class COMPONENTDYNAMICSKILLS_API UActorCDS : public UActorComponent
@@ -72,6 +73,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic Skills CDS|Registration")
 	TArray<TObjectPtr<USkillsDataAssetCDS>> RegisteredSkillAssets;
 
+	/** Modifier collections registered on BeginPlay before skills are initialized. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic Skills CDS|Parameter Modifiers|Registration")
+	TArray<TObjectPtr<USkillParameterModifierCollectionAssetCDS>> RegisteredParameterModifierCollections;
+
+	/** Individual modifier assets registered on BeginPlay before skills are initialized. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dynamic Skills CDS|Parameter Modifiers|Registration")
+	TArray<TObjectPtr<USkillParameterModifierDataAssetCDS>> RegisteredParameterModifierAssets;
+
 	/**
 	 * Register a skill asset with this component.
 	 * If a skill with the same tag already exists, it will be replaced.
@@ -80,6 +89,114 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Skills")
 	void RegisterSkill(USkillsDataAssetCDS *Asset);
+
+	/**
+	 * Register one parameter modifier asset for lookup by its ModifierTag.
+	 * @param Asset Modifier data asset to register.
+	 * @return True when the asset is valid and registered.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool RegisterParameterModifier(USkillParameterModifierDataAssetCDS *Asset);
+
+	/**
+	 * Register every valid modifier asset in a collection.
+	 * @param Collection Collection asset to register.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	void RegisterParameterModifierCollection(USkillParameterModifierCollectionAssetCDS *Collection);
+
+	/**
+	 * Apply a registered modifier asset to one registered skill.
+	 * Parameter tags absent from the skill are skipped. Reapplying the same modifier tag replaces its values and refreshes its duration.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ModifierTag Tag of the registered modifier asset.
+	 * @return True when at least one operation targets a parameter on the skill.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool ApplyModParameters(FGameplayTag SkillTag, FGameplayTag ModifierTag);
+
+	/**
+	 * Apply a runtime-created modifier using the same evaluator as registered modifier assets.
+	 * ModifierTag is optional; when omitted a new modifier instance is created. Use
+	 * ApplyRuntimeModParametersWithHandle when individual removal is needed.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ModifierSpec Runtime modifier operations and duration.
+	 * @return True when at least one operation targets a parameter on the skill.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool ApplyRuntimeModParameters(FGameplayTag SkillTag, const FSkillParameterModifierSpecCDS &ModifierSpec);
+
+	/**
+	 * Apply a runtime-created modifier and return its unique application handle.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ModifierSpec Runtime modifier operations and duration.
+	 * @param OutModifierHandle Handle for removing this application later.
+	 * @return True when at least one operation targets a parameter on the skill.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool ApplyRuntimeModParametersWithHandle(
+		FGameplayTag SkillTag,
+		const FSkillParameterModifierSpecCDS &ModifierSpec,
+		FGuid &OutModifierHandle);
+
+	/**
+	 * Remove a tagged modifier from one skill.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ModifierTag Tag of the active modifier to remove.
+	 * @return True when an active modifier was removed.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool RemoveModParameter(FGameplayTag SkillTag, FGameplayTag ModifierTag);
+
+	/**
+	 * Remove all active modifiers from skills whose exact tags are in SkillTags.
+	 * @param SkillTags Exact skill tags whose active modifiers should be cleared.
+	 * @return Number of active modifier instances removed.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	int32 RemoveModParameters(const FGameplayTagContainer &SkillTags);
+
+	/**
+	 * Get the registered base value after applying all active modifiers.
+	 * Can be called from skill logic through Context.SourceComponent or from other systems such as UI.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ParameterTag Exact parameter tag defined by the skill asset.
+	 * @param OutValue Effective parameter value when found.
+	 * @return True when the skill and parameter were found and resolved.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool GetResolvedSkillParameterValue(
+		FGameplayTag SkillTag,
+		FGameplayTag ParameterTag,
+		float &OutValue) const;
+
+	/**
+	 * Apply one caller-supplied operation to the registered base value, then apply active modifiers.
+	 * This does not mutate the skill asset or store the supplied value. Can be called from skill logic
+	 * through Context.SourceComponent or from other systems such as UI.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ParameterTag Exact parameter tag defined by the skill asset.
+	 * @param BaseOperation Operation to apply to the asset's base value.
+	 * @param Operand Value used by BaseOperation.
+	 * @param OutValue Resolved value when found and valid.
+	 * @return True when the skill and parameter were found and the result is finite.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool ResolveSkillParameterValue(
+		FGameplayTag SkillTag,
+		FGameplayTag ParameterTag,
+		ESkillParameterOperationCDS BaseOperation,
+		float Operand,
+		float &OutValue) const;
+
+	/**
+	 * Remove one runtime modifier by its unique application handle.
+	 * @param SkillTag Exact tag of the registered skill.
+	 * @param ModifierHandle Handle returned by ApplyRuntimeModParametersWithHandle.
+	 * @return True when the matching runtime modifier was removed.
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Parameter Modifiers")
+	bool RemoveRuntimeModParameter(FGameplayTag SkillTag, FGuid ModifierHandle);
 
 	/**
 	 * Find skill runtime data by gameplay tag.
@@ -123,10 +240,11 @@ public:
 	 *
 	 * @param Tag The gameplay tag of the skill to activate
 	 * @param TargetActor Optional target actor for the skill (e.g., enemy, item)
+	 * @param bCanStart Whether activation is allowed to proceed
 	 * @return True if activation was successful, false otherwise
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Activation")
-	bool TryActivateSkill(FGameplayTag Tag, AActor *TargetActor = nullptr);
+	bool TryActivateSkill(FGameplayTag Tag, AActor *TargetActor = nullptr, bool bCanStart = true);
 
 	/**
 	 * Commit a skill after charge completion.
@@ -158,6 +276,15 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Dynamic Skills CDS|Lifecycle")
 	void InterruptSkill(FGameplayTag Tag);
+
+	/**
+	 * Interrupt a skill without checking its configured interrupt policy.
+	 * Used by skill logic to cancel its own activation.
+	 *
+	 * @param Tag The gameplay tag of the skill to interrupt
+	 * @return True if the skill was interrupted
+	 */
+	bool ForceInterruptSkill(FGameplayTag Tag);
 
 	/**
 	 * Check if a skill can be activated.
@@ -192,7 +319,7 @@ public:
 	 * Resolve an executor instance by execution type.
 	 * Executors are cached and reused for performance.
 	 *
-	 * @param Type The execution type (Melee, Projectile, AOE)
+	 * @param Type The execution type (Instant, Projectile, AOE)
 	 * @return Executor instance, or nullptr if type is unsupported
 	 */
 	USkillExecutor *ResolveExecutor(ESkillExecutionType Type);
@@ -232,6 +359,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Dynamic Skills CDS|Runtime")
 	TArray<FSkillRuntimeData> Skills;
 
+	/** Registered modifier definitions indexed by their unique modifier tag. */
+	UPROPERTY(VisibleAnywhere, Category = "Dynamic Skills CDS|Parameter Modifiers|Runtime")
+	TMap<FGameplayTag, TObjectPtr<USkillParameterModifierDataAssetCDS>> ParameterModifierLookup;
+
 	/**
 	 * Cache of executor instances by execution type.
 	 * Executors are lazily instantiated and reused.
@@ -249,7 +380,69 @@ private:
 	 * Register skills from configured collections and direct assets.
 	 */
 	void RegisterSkillsFromCollections();
+	/** Register modifier definitions from the configured collections and direct assets. */
+	void RegisterParameterModifiersFromCollections();
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	/**
+	 * Apply a validated modifier spec to runtime data for one skill.
+	 * @param SkillTag Exact tag of the target skill.
+	 * @param ModifierSpec Modifier operations and duration to copy into runtime.
+	 * @param bRequireModifierTag Whether this call requires a stable modifier tag.
+	 * @param OutModifierHandle Optional output handle for the active application.
+	 * @return True when the modifier was applied to at least one parameter.
+	 */
+	bool ApplyParameterModifierSpec(
+		FGameplayTag SkillTag,
+		const FSkillParameterModifierSpecCDS &ModifierSpec,
+		bool bRequireModifierTag,
+		FGuid *OutModifierHandle);
+	/**
+	 * Clear all active parameter modifiers and their timers for one skill.
+	 * @param Skill Runtime entry whose modifier records should be cleared.
+	 */
+	void ClearSkillParameterModifiers(FSkillRuntimeData &Skill) const;
+	/**
+	 * Clear the expiration timer owned by one active modifier.
+	 * @param Modifier Active modifier whose timer should be cleared.
+	 */
+	void ClearParameterModifierTimer(FActiveSkillParameterModifierCDS &Modifier) const;
+	/**
+	 * Build a copy of the skill's base parameter map with active modifiers resolved.
+	 * @param Skill Runtime entry whose asset and modifiers are evaluated.
+	 * @param OutParameters Receives the resolved parameter map.
+	 */
+	void BuildResolvedParameters(const FSkillRuntimeData &Skill, TMap<FGameplayTag, float> &OutParameters) const;
+	/**
+	 * Resolve one known parameter from an explicit starting value and active modifiers.
+	 * @param Skill Runtime entry containing the parameter definition and active modifiers.
+	 * @param ParameterTag Exact parameter tag to evaluate.
+	 * @param BaseValue Starting value before active modifiers.
+	 * @param OutValue Receives the effective value when successful.
+	 * @return True when the parameter exists and resolves to a finite value.
+	 */
+	bool ResolveParameterValue(const FSkillRuntimeData &Skill, FGameplayTag ParameterTag, float BaseValue, float &OutValue) const;
+	/**
+	 * Apply one arithmetic operation to a base value and validate the result.
+	 * @param BaseValue Initial numeric value.
+	 * @param Operation Arithmetic operation to apply.
+	 * @param Operand Value used by the operation.
+	 * @param OutValue Receives the result when finite.
+	 * @return True when the operation is valid and the result is finite.
+	 */
+	bool ApplyParameterOperation(
+		float BaseValue,
+		ESkillParameterOperationCDS Operation,
+		float Operand,
+		float &OutValue) const;
+
+	/**
+	 * Remove an active modifier when its timer expires.
+	 * @param SkillTag Exact tag of the skill owning the modifier.
+	 * @param ApplicationId Unique identity of the expiring application.
+	 */
+	UFUNCTION()
+	void HandleParameterModifierExpired(FGameplayTag SkillTag, FGuid ApplicationId);
 
 	/**
 	 * Check if a skill should be interrupted based on policy.
@@ -281,6 +474,9 @@ private:
 	 * @param Context The execution context containing skill and effect data
 	 */
 	void ApplyEffectInternal(const FSkillExecutionContext &Context);
+
+	/** Shared implementation for policy-checked and forced interruption. */
+	bool InterruptSkillInternal(FGameplayTag Tag, bool bForce);
 
 	/**
 	 * Trigger animation montage associated with the skill.

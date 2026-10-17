@@ -15,6 +15,7 @@ void UActorCDS::RegisterSkill(USkillsDataAssetCDS *Asset)
 	{
 		FSkillRuntimeData &Skill = Skills[*OldIndex];
 		ClearSkillTimers(Skill);
+		ClearSkillParameterModifiers(Skill);
 		Skill.Asset = Asset;
 		Skill.CurrentCharges = GetMaxCharges(Asset);
 		Skill.State = ESkillState::Idle;
@@ -33,7 +34,7 @@ void UActorCDS::RegisterSkill(USkillsDataAssetCDS *Asset)
 		Runtime.LogicInstance = NewObject<USkillLogicBaseCDS>(this, Asset->SkillLogicClass);
 		if (Runtime.LogicInstance)
 		{
-			Runtime.LogicInstance->Initialize(this);
+			Runtime.LogicInstance->Initialize(this, Asset->SkillTag);
 		}
 	}
 
@@ -145,7 +146,8 @@ void UActorCDS::RegisterSkillsFromCollections()
 	}
 }
 
-void USkillLogicBaseCDS::Initialize(UActorCDS *InOwner)
+void USkillLogicBaseCDS::Initialize(UActorCDS *InOwner, FGameplayTag InSkillTag)
 {
 	OwningComponent = InOwner;
+	OwningSkillTag = InSkillTag;
 }

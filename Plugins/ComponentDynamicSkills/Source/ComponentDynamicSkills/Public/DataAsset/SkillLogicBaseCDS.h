@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "GameplayTagContainer.h"
 #include "SkillExecutionContextCDS.h"
 #include "SkillLogicBaseCDS.generated.h"
 
@@ -21,7 +22,7 @@ class COMPONENTDYNAMICSKILLS_API USkillLogicBaseCDS : public UObject
 public:
 	/**
 	 * Called when a skill is activated.
-	 * Executed after validation but before state change.
+	 * Executed after validation, with the skill already in the PreCast state.
 	 *
 	 * @param Context Execution context with source, target, and skill data
 	 */
@@ -65,6 +66,16 @@ public:
 	void OnInterrupt(const FSkillExecutionContext &Context);
 
 	/**
+	 * Interrupt this skill, bypassing its configured interrupt policy.
+	 * On success, calls OnFinish immediately and stops later CDS lifecycle stages when the current callback returns.
+	 * The current Blueprint event graph continues after this node; the return value reports whether interruption succeeded.
+	 *
+	 * @return True if the skill was interrupted
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Skill Logic CDS")
+	bool InterruptSkill();
+
+	/**
 	 * Get the owner actor of this skill logic.
 	 *
 	 * @return Owner actor
@@ -81,12 +92,15 @@ public:
 	UActorCDS *GetCDSComponent() const;
 
 protected:
-	void Initialize(UActorCDS* InOwner);
+	void Initialize(UActorCDS* InOwner, FGameplayTag InSkillTag);
 	
 private:
 	// Cached reference to the owning component
 	UPROPERTY(Transient)
 	TObjectPtr<UActorCDS> OwningComponent = nullptr;
+
+	UPROPERTY(Transient)
+	FGameplayTag OwningSkillTag;
 
 	// Allow ActorCDS to set the owning component
 	friend class UActorCDS;

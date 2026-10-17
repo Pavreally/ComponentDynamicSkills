@@ -17,7 +17,7 @@ void USkillExecutor::Execute(const FSkillExecutionContext& Context)
 	// }
 }
 
-void UMeleeSkillExecutor::Execute(const FSkillExecutionContext& Context)
+void UInstantSkillExecutor::Execute(const FSkillExecutionContext& Context)
 {
 	if (Context.Data == nullptr)
 	{
@@ -27,13 +27,7 @@ void UMeleeSkillExecutor::Execute(const FSkillExecutionContext& Context)
 	// Base execution
 	Super::Execute(Context);
 
-	// Melee-specific logic
-	// if (Context.Data->Effect)
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("Melee Skill [%s] applied to target: %s"), 
-	// 		*Context.Data->SkillTag.ToString(), 
-	// 		*GetNameSafe(Context.Target));
-	// }
+	// Add generic immediate-execution behavior here.
 }
 
 void UProjectileSkillExecutor::Execute(const FSkillExecutionContext& Context)
@@ -68,8 +62,8 @@ void UAOESkillExecutor::Execute(const FSkillExecutionContext& Context)
 	// AOE-specific logic
 	if (Context.Data->StatusEffects.Num() > 0)
 	{
-		const float MinRadius = Context.Data->Parameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("Parameter.MinRadius"), false));
-		const float MaxRadius = Context.Data->Parameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("Parameter.MaxRadius"), false));
+		const float MinRadius = Context.ResolvedParameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("CDS.Parameters.MinRadius"), false));
+		const float MaxRadius = Context.ResolvedParameters.FindRef(FGameplayTag::RequestGameplayTag(TEXT("CDS.Parameters.MaxRadius"), false));
 		UE_LOG(LogTemp, Warning, TEXT("AOE Skill [%s] radius: min=%.2f max=%.2f"), 
 			*Context.Data->SkillTag.ToString(),
 			MinRadius,

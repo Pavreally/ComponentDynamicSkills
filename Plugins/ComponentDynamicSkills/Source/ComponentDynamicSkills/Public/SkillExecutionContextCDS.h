@@ -78,4 +78,11 @@ public:
 	 */
 	UPROPERTY(BlueprintReadWrite, Category = "Skill Context")
 	TObjectPtr<const USkillContextDataAssetCDS> ContextData = nullptr;
+
+	/**
+	 * Snapshot of this skill's parameters after applying modifiers active when this context was built.
+	 * Use SourceComponent->GetResolvedSkillParameterValue to query another skill or read the current value.
+	 */
+	UPROPERTY(BlueprintReadOnly, Category = "Skill Context|Parameters")
+	TMap<FGameplayTag, float> ResolvedParameters;
 };

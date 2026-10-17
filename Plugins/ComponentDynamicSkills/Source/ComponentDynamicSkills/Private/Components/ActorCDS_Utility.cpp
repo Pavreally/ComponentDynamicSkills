@@ -23,8 +23,8 @@ USkillExecutor *UActorCDS::ResolveExecutor(ESkillExecutionType Type)
 
 	switch (Type)
 	{
-	case ESkillExecutionType::Melee:
-		NewExecutor = NewObject<UMeleeSkillExecutor>(this);
+	case ESkillExecutionType::Instant:
+		NewExecutor = NewObject<UInstantSkillExecutor>(this);
 		break;
 
 	case ESkillExecutionType::Projectile:
@@ -36,7 +36,7 @@ USkillExecutor *UActorCDS::ResolveExecutor(ESkillExecutionType Type)
 		break;
 
 	default:
-		NewExecutor = NewObject<USkillExecutor>(this);
+		NewExecutor = NewObject<UInstantSkillExecutor>(this);
 	}
 
 	// Cache and return executor
@@ -193,6 +193,7 @@ FSkillExecutionContext UActorCDS::BuildContext(FSkillRuntimeData &Skill)
 	Context.Data = Skill.Asset;
 	Context.ContextData = ResolveSkillContext(Skill.Asset, FGameplayTagContainer{});
 	Context.ChargeAlpha = CalculateChargeAlpha(Skill);
+	BuildResolvedParameters(Skill, Context.ResolvedParameters);
 	return Context;
 }
 

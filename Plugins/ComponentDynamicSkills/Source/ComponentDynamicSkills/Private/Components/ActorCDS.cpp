@@ -15,6 +15,7 @@ UActorCDS::UActorCDS()
 void UActorCDS::BeginPlay()
 {
 	Super::BeginPlay();
+	RegisterParameterModifiersFromCollections();
 	RegisterSkillsFromCollections();
 }
 
@@ -24,6 +25,7 @@ void UActorCDS::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	for (FSkillRuntimeData &Skill : Skills)
 	{
 		ClearSkillTimers(Skill);
+		ClearSkillParameterModifiers(Skill);
 		Skill.State = ESkillState::Idle;
 		Skill.CurrentCooldown = 0.0f;
 		Skill.ChargeStartTime = 0.0f;

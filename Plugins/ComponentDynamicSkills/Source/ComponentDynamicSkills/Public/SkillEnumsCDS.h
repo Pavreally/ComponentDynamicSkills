@@ -7,13 +7,13 @@
 
 /**
  * Determines which executor system handles skill execution.
- * Executors implement attack patterns (melee swings, projectile trajectories, AOE patterns).
+ * Instant is the general immediate-execution path; Projectile and AOE select specialized executors.
  */
 UENUM(BlueprintType)
 enum class ESkillExecutionType : uint8
 {
-	/** Direct melee attack (sword swing, punch, etc.) */
-	Melee,
+	/** Immediate, general-purpose skill execution (for example, a dash). */
+	Instant,
 	
 	/** Projectile-based attack (fireball, arrow, etc.) */
 	Projectile,

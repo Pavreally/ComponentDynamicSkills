@@ -26,10 +26,10 @@ public:
 };
 
 /**
- * Melee skill executor - handles close-range physical attacks.
+ * General-purpose executor for immediate skills such as dashes and direct ability effects.
  */
 UCLASS()
-class COMPONENTDYNAMICSKILLS_API UMeleeSkillExecutor : public USkillExecutor
+class COMPONENTDYNAMICSKILLS_API UInstantSkillExecutor : public USkillExecutor
 {
 	GENERATED_BODY()
 

@@ -33,13 +33,26 @@ void UActorCDS::CommitSkill(FSkillRuntimeData &Skill)
 	if (Skill.LogicInstance)
 	{
 		Skill.LogicInstance->OnCommit(BuildContext(Skill));
+		if (Skill.bInterruptedThisActivation)
+		{
+			return;
+		}
 	}
 
 	OnSkillCommitted.Broadcast(Skill.Asset->SkillTag);
+	if (Skill.bInterruptedThisActivation)
+	{
+		return;
+	}
 
 	// Consume a charge and proceed to execution
 	Skill.CurrentCharges = FMath::Max(0, Skill.CurrentCharges - 1);
+	Skill.State = ESkillState::Casting;
 	OnChargesChanged.Broadcast(Skill.Asset->SkillTag, Skill.CurrentCharges);
+	if (Skill.bInterruptedThisActivation)
+	{
+		return;
+	}
 
 	ExecuteSkill(Skill);
 }
@@ -59,20 +72,36 @@ void UActorCDS::ExecuteSkill(FSkillRuntimeData &Skill)
 	if (Skill.Asset->Modifier)
 	{
 		Skill.Asset->Modifier->ModifyExecution(Context);
+		if (Skill.bInterruptedThisActivation)
+		{
+			return;
+		}
 	}
 
 	// Notify skill logic of execution
 	if (Skill.LogicInstance)
 	{
 		Skill.LogicInstance->OnExecute(Context);
+		if (Skill.bInterruptedThisActivation)
+		{
+			return;
+		}
 	}
 
 	OnSkillExecuted.Broadcast(Skill.Asset->SkillTag);
+	if (Skill.bInterruptedThisActivation)
+	{
+		return;
+	}
 
-	// Execute the skill using the appropriate executor (Melee, Projectile, AOE)
+	// Execute the skill using the appropriate executor (Instant, Projectile, AOE)
 	if (USkillExecutor *Executor = ResolveExecutor(Skill.Asset->ExecutionType))
 	{
 		Executor->Execute(Context);
+		if (Skill.bInterruptedThisActivation)
+		{
+			return;
+		}
 	}
 
 	// Apply skill effects independently from CDE
@@ -105,10 +134,11 @@ void UActorCDS::ExecuteSkill(FSkillRuntimeData &Skill)
 
 void UActorCDS::FinishSkill(FSkillRuntimeData &Skill)
 {
-	if (Skill.Asset == nullptr)
+	if (Skill.Asset == nullptr || Skill.bIsFinishing)
 	{
 		return;
 	}
+	Skill.bIsFinishing = true;
 
 	// Notify skill logic of finish
 	if (Skill.LogicInstance)
@@ -153,6 +183,7 @@ void UActorCDS::FinishSkill(FSkillRuntimeData &Skill)
 			HandleCooldownFinished(Skill.Asset->SkillTag);
 		}
 
+		Skill.bIsFinishing = false;
 		return;
 	}
 
@@ -164,6 +195,7 @@ void UActorCDS::FinishSkill(FSkillRuntimeData &Skill)
 		Skill.CurrentCooldown = 0.0f;
 		OnCooldownChanged.Broadcast(Skill.Asset->SkillTag, Skill.CurrentCooldown);
 		Skill.State = ESkillState::Idle;
+		Skill.bIsFinishing = false;
 		return;
 	}
 
@@ -171,6 +203,7 @@ void UActorCDS::FinishSkill(FSkillRuntimeData &Skill)
 	if (Skill.Asset->bAutoRecharge && Skill.CurrentCharges < MaxCharges)
 	{
 		StartRecharge(Skill);
+		Skill.bIsFinishing = false;
 		return;
 	}
 
@@ -178,4 +211,5 @@ void UActorCDS::FinishSkill(FSkillRuntimeData &Skill)
 	Skill.CurrentCooldown = 0.0f;
 	OnCooldownChanged.Broadcast(Skill.Asset->SkillTag, Skill.CurrentCooldown);
 	Skill.State = ESkillState::Idle;
+	Skill.bIsFinishing = false;
 }

@@ -6,8 +6,13 @@
 
 #include "Engine/World.h"
 
-bool UActorCDS::TryActivateSkill(FGameplayTag Tag, AActor *TargetActor)
+bool UActorCDS::TryActivateSkill(FGameplayTag Tag, AActor *TargetActor, bool bCanStart)
 {
+	if (!bCanStart)
+	{
+		return false;
+	}
+
 	// Find and validate skill
 	FSkillRuntimeData *Skill = FindSkill(Tag);
 	if (Skill == nullptr || !CanActivateSkill(*Skill))
@@ -17,12 +22,19 @@ bool UActorCDS::TryActivateSkill(FGameplayTag Tag, AActor *TargetActor)
 
 	// Store target actor for skill logic
 	Skill->TargetActor = TargetActor;
+	Skill->bInterruptedThisActivation = false;
+	Skill->ChargeStartTime = 0.0f;
+	Skill->State = ESkillState::PreCast;
 
 	// Notify skill logic of activation
 	if (Skill->LogicInstance)
 	{
 		FSkillExecutionContext Context = BuildContext(*Skill);
 		Skill->LogicInstance->OnActivate(Context);
+		if (Skill->bInterruptedThisActivation)
+		{
+			return false;
+		}
 	}
 
 	// Broadcast activation event
@@ -30,9 +42,10 @@ bool UActorCDS::TryActivateSkill(FGameplayTag Tag, AActor *TargetActor)
 	{
 		OnSkillActivated.Broadcast(Skill->Asset->SkillTag);
 	}
-
-	Skill->State = ESkillState::PreCast;
-	Skill->ChargeStartTime = 0.0f;
+	if (Skill->bInterruptedThisActivation)
+	{
+		return false;
+	}
 
 	// If skill is chargeable, enter charging state and set up charge timeout timer
 	if (Skill->Asset && Skill->Asset->bIsChargeable)
@@ -60,12 +73,12 @@ bool UActorCDS::TryActivateSkill(FGameplayTag Tag, AActor *TargetActor)
 			}
 		}
 
-		return true;
+		return !Skill->bInterruptedThisActivation;
 	}
 
 	// Non-chargeable skills proceed directly to commit
 	CommitSkill(*Skill);
-	return true;
+	return !Skill->bInterruptedThisActivation;
 }
 
 bool UActorCDS::CanActivateSkill(const FSkillRuntimeData &Skill) const
@@ -76,8 +89,8 @@ bool UActorCDS::CanActivateSkill(const FSkillRuntimeData &Skill) const
 	if (!Skill.Asset->SkillTag.IsValid())
 		return false;
 	
-	// Check skill is in idle state
-	if (Skill.State != ESkillState::Idle)
+	// Check skill is idle and not inside a lifecycle callback
+	if (Skill.State != ESkillState::Idle || Skill.bIsInterrupting || Skill.bIsFinishing)
 		return false;
 	
 	// Check available charges
@@ -103,13 +116,35 @@ bool UActorCDS::CanActivateSkillByTag(FGameplayTag Tag)
 
 void UActorCDS::InterruptSkill(FGameplayTag Tag)
 {
+	InterruptSkillInternal(Tag, false);
+}
+
+bool UActorCDS::ForceInterruptSkill(FGameplayTag Tag)
+{
+	return InterruptSkillInternal(Tag, true);
+}
+
+bool UActorCDS::InterruptSkillInternal(FGameplayTag Tag, bool bForce)
+{
 	FSkillRuntimeData *Skill = FindSkill(Tag);
-	if (Skill == nullptr || Skill->Asset == nullptr)
-		return;
+	if (Skill == nullptr || Skill->Asset == nullptr || Skill->bIsInterrupting || Skill->bIsFinishing)
+		return false;
 
 	// Check interrupt policy
-	if (!ShouldInterrupt(Skill->Asset->InterruptPolicy))
-		return;
+	if (!bForce && !ShouldInterrupt(Skill->Asset->InterruptPolicy))
+		return false;
+
+	// Only an active lifecycle phase can be interrupted.
+	if (Skill->State != ESkillState::PreCast &&
+		Skill->State != ESkillState::Charging &&
+		Skill->State != ESkillState::Casting &&
+		Skill->State != ESkillState::Active)
+	{
+		return false;
+	}
+
+	Skill->bIsInterrupting = true;
+	Skill->bInterruptedThisActivation = true;
 
 	// Notify skill logic of interruption
 	if (Skill->LogicInstance)
@@ -123,13 +158,26 @@ void UActorCDS::InterruptSkill(FGameplayTag Tag)
 	{
 	case ESkillState::PreCast:
 	case ESkillState::Charging:
-		// Reset skill to idle without consuming charges
+		// Cancel the pending activation without consuming charges or applying cooldown.
 		ClearSkillTimers(*Skill);
-		Skill->State = ESkillState::Idle;
-		Skill->CurrentCooldown = 0.0f;
-		Skill->ChargeStartTime = 0.0f;
+		if (!bForce)
+		{
+			Skill->State = ESkillState::Idle;
+			Skill->CurrentCooldown = 0.0f;
+			Skill->ChargeStartTime = 0.0f;
+		}
 		OnSkillInterrupted.Broadcast(Skill->Asset->SkillTag);
 		OnSkillInterruptedReason.Broadcast(Skill->Asset->SkillTag, Skill->Asset->InterruptPolicy);
+		if (bForce && Skill->LogicInstance)
+		{
+			Skill->LogicInstance->OnFinish(BuildContext(*Skill));
+		}
+		if (bForce)
+		{
+			Skill->State = ESkillState::Idle;
+			Skill->CurrentCooldown = 0.0f;
+			Skill->ChargeStartTime = 0.0f;
+		}
 		break;
 
 	case ESkillState::Casting:
@@ -144,4 +192,7 @@ void UActorCDS::InterruptSkill(FGameplayTag Tag)
 	default:
 		break;
 	}
+
+	Skill->bIsInterrupting = false;
+	return true;
 }

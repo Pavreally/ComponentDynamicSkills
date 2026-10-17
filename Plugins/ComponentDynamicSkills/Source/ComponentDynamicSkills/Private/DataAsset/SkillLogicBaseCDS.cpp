@@ -41,3 +41,12 @@ UActorCDS* USkillLogicBaseCDS::GetCDSComponent() const
 {
 	return OwningComponent;
 }
+
+bool USkillLogicBaseCDS::InterruptSkill()
+{
+	if (OwningComponent && OwningSkillTag.IsValid())
+	{
+		return OwningComponent->ForceInterruptSkill(OwningSkillTag);
+	}
+	return false;
+}
