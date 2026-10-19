@@ -24,7 +24,7 @@ Unreal Engine 5 Actor Component for managing dynamic abilities in single-player 
 - Added a forced ability interruption function to `SkillLogicBaseCDS`.
 
 ## What it's for
-- Management and configuration of player character abilities, featuring the ability to pass data into the State Tree.
+- Management and configuration of game abilities with built-in integration into the State Tree system.
 
 ## Features
 - Support for dynamic creation of abilities.
